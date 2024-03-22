@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Let's Play</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js" type="text/javascript"></script>
   <style>
     .box {
       display: inline-block;
@@ -91,7 +92,17 @@
     }
 
     function sendMove() {
+      // next player
       game.active = (game.active+1) % 2
+
+      // send game
+      msgSend(game)
+    }
+
+    function recvMove(data) {
+      // store game
+      game = data
+
       updateBoard()
     }
 
@@ -121,6 +132,28 @@
     for (const el of document.getElementsByClassName("box")) {
       el.addEventListener("click", boxClicked)
     }
-  </script>
+
+    // connection to mqtt server
+    const topic = "svp-gta/tictactoe"
+  
+    function onConnect() {
+      console.log("connected")
+      client.subscribe(topic)  
+    }
+
+    function msgArrived(msg) {
+      if (msg.destinationName == topic) {
+        recvMove(JSON.parse(msg.payloadString))
+      }
+    }
+
+    function msgSend(data) {
+      client.send(topic, JSON.stringify(data), 0, true)
+    }
+
+    var client = new Paho.MQTT.Client("test.mosquitto.org", 8080, "client"+crypto.randomUUID())
+    client.onMessageArrived = msgArrived
+    client.connect({timeout: 3, onSuccess: onConnect})
+    </script>
 </body>
 </html>
