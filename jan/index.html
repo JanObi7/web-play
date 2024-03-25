@@ -39,6 +39,15 @@
     <button onclick="newGame()">Neu</button>
     <button onclick="joinGame()">Beitreten</button>
   </div>
+  <p>Meine Spiele (ich am Zug)</p>
+  <ul id="mygames_me"></ul>
+  <p>Meine Spiele (anderer am Zug)</p>
+  <ul id="mygames_other"></ul>
+  <p>Freie Spiele</p>
+  <ul id="opengames"></ul>
+  <p>Andere Spiele</p>
+  <ul id="othergames"></ul>
+
   <div id="board">
     <span id="player1"></span> : <span id="player2"></span>
     <div class="row">
@@ -62,48 +71,89 @@
   </div>
 
   <script>
-    var game = {
-      board: { b11: "", b12: "", b13: "", b21: "", b22: "", b23: "", b31: "", b32: "", b33: "" },
-      players: ["", ""],
-      active: -1
-    }
+    var name = "Jan"
+    var games = {}
+    var game = null
 
     function newGame() {
-      var name = document.getElementById("name").value
-
       if (name != "") {
-        game = {
+        var game = {
           board: { b11: "", b12: "", b13: "", b21: "", b22: "", b23: "", b31: "", b32: "", b33: "" },
           players: [name, ""],
-          active: 0
+          active: 0,
+          id: crypto.randomUUID()
         }
 
-        updateBoard()
+        sendGame(game)
       }
     }
 
-    function joinGame() {
-      var name = document.getElementById("name").value
-
+    function joinGame(game) {
       if (name != "" && game.players[1] == "") {
         game.players[1] = name
-        updateBoard()
+        sendGame(game)
       }
     }
 
     function sendMove() {
       // next player
       game.active = (game.active+1) % 2
-
-      // send game
-      msgSend(game)
+      sendGame(game)
     }
 
-    function recvMove(data) {
-      // store game
-      game = data
+    function sendGame(game) {
 
+      // send game
+      // msgSend(game)
+      recvGame(game)
+    }
+
+    function recvGame(data) {
+      // store game
+      games[data.id] = data
+
+      updateLists()
+    }
+
+    function selectGame(id) {
+      game = games[id]
       updateBoard()
+    }
+
+    function updateLists() {
+      var gs, html;
+
+      // #############################
+      gs = Object.values(games).filter(function (game) {
+        if (game.players.includes(name) && game.players[game.active] == name) {
+          return true
+        } else {
+          return false
+        }
+      })
+      console.log(gs)
+      html = gs.map(function (game) {
+        return "<li onclick=\"selectGame('"+game.id+"')\">"+ "TicTacToe " + game.players[0] + " gegen " + game.players[1] + "</li>"
+      }).join("")
+      console.log(html)
+
+      document.getElementById("mygames_me").innerHTML = html
+
+      // #############################
+      gs = Object.values(games).filter(function (game) {
+        if (game.players.includes(name) && game.players[game.active] != name) {
+          return true
+        } else {
+          return false
+        }
+      })
+      console.log(gs)
+      html = gs.map(function (game) {
+        return "<li onclick=\"selectGame('"+game.id+"')\">"+ "TicTacToe " + game.players[0] + " gegen " + game.players[1] + "</li>"
+      }).join("")
+      console.log(html)
+
+      document.getElementById("mygames_other").innerHTML = html
     }
 
     function updateBoard() {
