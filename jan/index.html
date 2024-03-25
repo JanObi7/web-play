@@ -151,7 +151,7 @@
       client.send(topic, JSON.stringify(data), 0, true)
     }
 
-    var client = new Paho.MQTT.Client("test.mosquitto.org", 8080, "client"+crypto.randomUUID())
+    var client = new Paho.MQTT.Client("localhost", 8883, "client-"+crypto.randomUUID())
     client.onMessageArrived = msgArrived
     client.connect({timeout: 3, onSuccess: onConnect})
     </script>
